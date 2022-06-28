@@ -23,6 +23,10 @@ def save_pdf(url):
         logging.info("  error: %s", url)
         with open("errors.txt", "a") as error_file:
             error_file.write(url + "\n")
+        return
+
+    with open("processed.txt", "a") as the_file:
+        the_file.write(url + "\n")
 
 
 def get_out(url):
@@ -37,11 +41,16 @@ if __name__ == "__main__":
     if exists("errors.txt"):
         _errors = open("errors.txt", "r").readlines()
 
+    # prevent retrying processed
+    _processed = []
+    if exists("processed.txt"):
+        _processed = open("processed.txt", "r").readlines()
+
     urls = []
     for url in _urls:
         url = url.strip()
         out = get_out(url)
-        if exists(out) or url in _errors:
+        if url in _processed or url in _errors or exists(out):
             continue
         urls.append(url)
 
