@@ -5,6 +5,7 @@ from random import shuffle
 from slugify import slugify
 import concurrent.futures
 import logging
+import configparser
 
 MODE_APPEND = "a"
 MODE_READ = "r"
@@ -42,10 +43,20 @@ def log_url_processed(_url):
 
 
 def get_out(_url):
-    return "out/" + slugify(_url) + ".pdf"
+    path = config['IO']['OutDirectory']
+    if not exists(path):
+        exit(path + ' does not exist!')
+    return config['IO']['OutDirectory'] + "/" + slugify(_url) + ".pdf"
 
 
 if __name__ == "__main__":
+    # load config
+    config = configparser.ConfigParser()
+    try:
+        config.read_file(open('config.ini'))
+    except FileNotFoundError:
+        exit('config.ini does not exist!')
+
     # prevent retrying
     store = {}
     for fn in [TXT_ERRORS,TXT_PROCESSED,TXT_URLS]:
@@ -75,6 +86,7 @@ if __name__ == "__main__":
         format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S"
     )
     logging.info("%s total urls", total_count)
+    logging.info("Saving into %s", config['IO']['OutDirectory'])
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         executor.map(save_pdf, urls)
