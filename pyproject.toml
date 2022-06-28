@@ -8,6 +8,7 @@ authors = ["Sander van Dragt <sander@vandragt.com>"]
 python = "^3.9"
 pdfkit = "^1.0.0"
 python-slugify = "^6.1.2"
+tldextract = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"

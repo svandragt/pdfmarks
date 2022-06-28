@@ -3,9 +3,11 @@ from os.path import exists
 from pdfkit import from_url
 from random import shuffle
 from slugify import slugify
+import tldextract
 import concurrent.futures
 import logging
 import configparser
+import os
 
 MODE_APPEND = "a"
 MODE_READ = "r"
@@ -19,8 +21,9 @@ def save_pdf(_url):
     global total_count
     current_count += 1
     _out = get_out(_url)
+    _relpath= _out.replace(config['IO']['OutDirectory'] + '/', "")
 
-    logging.info("[%s] saving %s", total_count - current_count, _url)
+    logging.info("[%s] saving %s into %s", total_count - current_count, _url, _relpath)
 
     try:
         from_url(_url, _out, options={"footer-center": _url})
@@ -41,12 +44,25 @@ def log_url_processed(_url):
     with open(TXT_PROCESSED, "a") as the_file:
         the_file.write(_url + "\n")
 
+def get_domain(_url):
+    result = tldextract.extract(_url)
+    return result.domain
+
 
 def get_out(_url):
     path = config['IO']['OutDirectory']
+
     if not exists(path):
         exit(path + ' does not exist!')
-    return config['IO']['OutDirectory'] + "/" + slugify(_url) + ".pdf"
+    chars = int(config['IO']['SubDirectoryChars'])
+    domain = get_domain(_url)
+    if chars > 0:
+        path += '/' + domain[:chars]
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    return path + "/" + slugify(_url) + ".pdf"
 
 
 if __name__ == "__main__":
@@ -77,6 +93,8 @@ if __name__ == "__main__":
             continue
 
         urls.append(url)
+
+    # prevent hitting the same domain repeatedly
     shuffle(urls)
 
     current_count = 0
