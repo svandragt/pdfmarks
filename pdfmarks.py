@@ -13,11 +13,6 @@ TXT_ERRORS = "errors.txt"
 TXT_URLS = "urls.txt"
 
 
-def log_url_processed(_url):
-    with open(TXT_PROCESSED, "a") as the_file:
-        the_file.write(_url + "\n")
-
-
 def save_pdf(_url):
     global current_count
     global total_count
@@ -30,10 +25,19 @@ def save_pdf(_url):
         from_url(_url, _out, options={"footer-center": _url})
     except OSError:
         logging.info("  error: %s", _url)
-        with open(TXT_ERRORS, MODE_APPEND) as error_file:
-            error_file.write(_url + "\n")
+        log_url_error(_url)
         return
     log_url_processed(_url)
+
+
+def log_url_error(_url):
+    with open(TXT_ERRORS, MODE_APPEND) as error_file:
+        error_file.write(_url + "\n")
+
+
+def log_url_processed(_url):
+    with open(TXT_PROCESSED, "a") as the_file:
+        the_file.write(_url + "\n")
 
 
 def get_out(_url):
@@ -55,10 +59,9 @@ if __name__ == "__main__":
 
     urls = []
     for url in _urls:
-        out = get_out(url)
         if url in _processed or url in _errors:
             continue
-        if exists(out):
+        if exists(get_out(url)):
             if url not in _processed:
                 log_url_processed(url)
             continue
