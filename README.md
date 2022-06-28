@@ -18,3 +18,4 @@ After waiting for a day capturing pdfs of 8k webpages I can say the following:
 - 8k pdfs are 7GB 
 
 But please go ahead if you want to play with this!
+If you want something more useful try my [fafi](https://github.com/svandragt/fafi) project.
