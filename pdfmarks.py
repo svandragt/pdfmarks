@@ -27,6 +27,7 @@ def save_pdf(_url):
         logging.info("  error: %s", _url)
         log_url_error(_url)
         return
+
     log_url_processed(_url)
 
 
@@ -45,32 +46,31 @@ def get_out(_url):
 
 
 if __name__ == "__main__":
-    _urls = open(TXT_URLS, MODE_READ).read().splitlines()
+    # prevent retrying
+    store = {}
+    for fn in [TXT_ERRORS,TXT_PROCESSED,TXT_URLS]:
+        if not exists(fn):
+            store[fn] = []
+            continue
 
-    # prevent retrying errors
-    _errors = []
-    if exists(TXT_ERRORS):
-        _errors = open(TXT_ERRORS, MODE_READ).read().splitlines()
-
-    # prevent retrying processed
-    _processed = []
-    if exists(TXT_PROCESSED):
-        _processed = open(TXT_PROCESSED, MODE_READ).read().splitlines()
+        store[fn] = open(fn, MODE_READ).read().splitlines()
 
     urls = []
-    for url in _urls:
-        if url in _processed or url in _errors:
+    for url in store[TXT_URLS]:
+        if url in store[TXT_PROCESSED] or url in store[TXT_ERRORS]:
             continue
+
         if exists(get_out(url)):
-            if url not in _processed:
+            if url not in store[TXT_PROCESSED]:
                 log_url_processed(url)
             continue
+
         urls.append(url)
+    shuffle(urls)
 
     current_count = 0
     total_count = len(urls)
 
-    shuffle(urls)
     logging.basicConfig(
         format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S"
     )
