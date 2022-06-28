@@ -1,5 +1,4 @@
 # Reference https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
-# TODO: read-args-from-stdin
 from os.path import exists
 from pdfkit import from_url
 from random import shuffle
@@ -7,50 +6,61 @@ from slugify import slugify
 import concurrent.futures
 import logging
 
+MODE_APPEND = "a"
+MODE_READ = "r"
+TXT_PROCESSED = "processed.txt"
+TXT_ERRORS = "errors.txt"
+TXT_URLS = "urls.txt"
 
-def save_pdf(url):
+
+def log_url_processed(_url):
+    with open(TXT_PROCESSED, "a") as the_file:
+        the_file.write(_url + "\n")
+
+
+def save_pdf(_url):
     global current_count
     global total_count
     current_count += 1
-    url = url.strip()
-    out = get_out(url)
+    _out = get_out(_url)
 
-    logging.info("[%s] saving %s", total_count - current_count, url)
+    logging.info("[%s] saving %s", total_count - current_count, _url)
 
     try:
-        from_url(url, out, options={"footer-center": url})
+        from_url(_url, _out, options={"footer-center": _url})
     except OSError:
-        logging.info("  error: %s", url)
-        with open("errors.txt", "a") as error_file:
-            error_file.write(url + "\n")
+        logging.info("  error: %s", _url)
+        with open(TXT_ERRORS, MODE_APPEND) as error_file:
+            error_file.write(_url + "\n")
         return
-
-    with open("processed.txt", "a") as the_file:
-        the_file.write(url + "\n")
+    log_url_processed(_url)
 
 
-def get_out(url):
-    return "out/" + slugify(url) + ".pdf"
+def get_out(_url):
+    return "out/" + slugify(_url) + ".pdf"
 
 
 if __name__ == "__main__":
-    _urls = open("urls.txt", "r").readlines()
+    _urls = open(TXT_URLS, MODE_READ).read().splitlines()
 
     # prevent retrying errors
     _errors = []
-    if exists("errors.txt"):
-        _errors = open("errors.txt", "r").readlines()
+    if exists(TXT_ERRORS):
+        _errors = open(TXT_ERRORS, MODE_READ).read().splitlines()
 
     # prevent retrying processed
     _processed = []
-    if exists("processed.txt"):
-        _processed = open("processed.txt", "r").readlines()
+    if exists(TXT_PROCESSED):
+        _processed = open(TXT_PROCESSED, MODE_READ).read().splitlines()
 
     urls = []
     for url in _urls:
-        url = url.strip()
         out = get_out(url)
-        if url in _processed or url in _errors or exists(out):
+        if url in _processed or url in _errors:
+            continue
+        if exists(out):
+            if url not in _processed:
+                log_url_processed(url)
             continue
         urls.append(url)
 
